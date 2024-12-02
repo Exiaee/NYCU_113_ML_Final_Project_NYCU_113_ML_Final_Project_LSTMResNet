@@ -17,9 +17,6 @@ mp_drawing_styles = mp.solutions.drawing_styles
 mp_hands = mp.solutions.hands
 
 def line_notify(msg,_token):
-    #_token = 'qphN3Zi109GPsEJJHQpATvhcpSikaaOzSJh8HEZMFds'  # 填入你的token
-    # line chat box:zWokLlOU7VY5NNhRo1TKIBOpTm9glGwgoeTTjkqrrdx
-    #Ac3V4ej7sgqLZKRR6wL5GmN3yu1O3H14TzP5LKafcro
     __token = _token  # 填入你的token
     url = 'https://notify-api.line.me/api/notify'
     headers = {
