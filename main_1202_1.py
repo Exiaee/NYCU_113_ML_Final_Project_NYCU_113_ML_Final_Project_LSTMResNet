@@ -11,12 +11,20 @@ import cv2 as cv
 import numpy as np
 import mediapipe as mp
 from model import KeyPointClassifier
+import time
+  
+# Timer starts
+starttime = time.time()
+lapnum = 1
 
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 mp_hands = mp.solutions.hands
 
 def line_notify(msg,_token):
+    #_token = 'qphN3Zi109GPsEJJHQpATvhcpSikaaOzSJh8HEZMFds'  # 填入你的token
+    # line chat box:zWokLlOU7VY5NNhRo1TKIBOpTm9glGwgoeTTjkqrrdx
+    #Ac3V4ej7sgqLZKRR6wL5GmN3yu1O3H14TzP5LKafcro
     __token = _token  # 填入你的token
     url = 'https://notify-api.line.me/api/notify'
     headers = {
@@ -29,6 +37,16 @@ def line_notify(msg,_token):
 
 
 
+def timer(t, s=starttime): #s:上次執行時間
+    tempt=round((time.time() - s), 4) 
+    print(tempt, " ", s )
+    if int(tempt)>=t: #>=t秒
+        s=time.time() #重設timer
+        return True, s
+    else:
+        return False, s #繼續計數
+    
+    
 # 根據兩點的座標，計算角度
 def vector_2d_angle(v1, v2):
     v1_x = v1[0]
@@ -87,16 +105,16 @@ def hand_pos(finger_angle):
     # 小於 50 表示手指伸直，大於等於 50 表示手指捲縮
     if f1<50 and f2>=50 and f3>=50 and f4>=50 and f5>=50:
         return 'Good'
-    elif f1>=50 and f2>=50 and f3<65 and f4>=50 and f5>=50:
+    elif f1>=50 and f2>=50 and f3<70 and f4>=50 and f5>=50:
         ###return 'FUCK!'
         return 'FXXK!'
-    elif f1<=50 and f2>=50 and f3<65 and f4>=50 and f5<=50:
+    elif f1<=50 and f2>=50 and f3<70 and f4>=50 and f5<=50:
         ### return 'FUCK YOU!!!'
         return 'FXXK YOU!!!'
     elif f1<50 and f2<50 and f3>=50 and f4>=50 and f5<50:
         return 'ROCK!'
     elif f1>=50 and f2>=50 and f3>=50 and f4>=50 and f5>=50:
-        return '0'
+        return 'Fist'
     elif f1>=50 and f2>=50 and f3>=50 and f4>=50 and f5<50:
         return 'pink'
     elif f1>=50 and f2<50 and f3>=50 and f4>=50 and f5>=50:
@@ -114,7 +132,7 @@ def hand_pos(finger_angle):
     elif f1<50 and f2<50 and f3<50 and f4<50 and f5<50:
         return 'NO! NO!'
     elif f1<50 and f2>=50 and f3>=50 and f4>=50 and f5<50:
-        return '666'
+        return '666!'
     elif f1<50 and f2<50 and f3>=50 and f4>=50 and f5>=50:
         return 'Bang'
     elif f1<50 and f2<50 and f3<50 and f4>=50 and f5>=50:
@@ -223,7 +241,7 @@ def draw_info_text(image, brect, facial_text):
 
 root=tk.Tk()
 
-root.geometry("480x240")
+root.geometry("520x240")
 root.title('NYCU ML 11thGroup Final Report')
 root.configure(bg="#7AFEC6")
 #root.geometry('300x300')
@@ -236,6 +254,7 @@ temp_name.set("")
 def Info():
     entry_name = En.get()
     entry_token=En2.get()
+    entry_period=En3.get()
     _name=str(entry_name)
     _token=str(entry_token)
     _name=_name.strip()
@@ -246,12 +265,14 @@ def Info():
         En.delete(0, 'end')
         En1.delete(0, 'end')
     else :#用get獲得帳密去判斷能不能登入
+        global period
         global token
         print(temp_token)
         token=str(_token)
         print(_token)
         global name
         name=str(_name)
+        period=int(entry_period)
         print(name)
         root.destroy()
 def Q():
@@ -280,6 +301,14 @@ label.grid(row=2)
 En2=tk.Entry(root,width=50)
 En2.grid(row=2,column=1)
 
+label=tk.Label(root,text='Time Period (s)',bg='#DDA0DD',fg="#8B008B",
+            font=("Algerian",12,"bold"),anchor='c')
+label.grid(row=3)
+En3=tk.Entry(root,width=50)
+En3.grid(row=3,column=1)
+
+
+
 b=tk.Button(root,text='Exit',anchor='c',width=6,height=1,command=Q)#quit可以讓pyhon shell結束
 b.grid(row=4,column=0)
 b1=tk.Button(root,text='Login',anchor='c',width=6,height=1,command=Info)
@@ -293,10 +322,13 @@ cap_width = 1920
 cap_height = 1080
 use_brect = True
 
+
 # Camera preparation
 cap = cv.VideoCapture(cap_device)
 cap.set(cv.CAP_PROP_FRAME_WIDTH, cap_width)
 cap.set(cv.CAP_PROP_FRAME_HEIGHT, cap_height)
+fourcc = cv.VideoWriter_fourcc(*'MP4V')
+out = cv.VideoWriter('output01.mp4', fourcc, 20.0, (cap_width,  cap_height))
 
 # Model load
 mp_face_mesh = mp.solutions.face_mesh
@@ -322,6 +354,7 @@ with open('model/keypoint_classifier/keypoint_classifier_label.csv',
 mode = 0
 Grade = 0
 bad_guy = 0
+ftime = 0
 with mp_hands.Hands(
     model_complexity=0,
     min_detection_confidence=0.5,
@@ -388,7 +421,6 @@ with mp_hands.Hands(
                     # 將 21 個節點換算成座標，記錄到 finger_points
                     x = i.x*size[1]
                     y = i.y*size[0]
-
                     finger_points.append((x,y))
                     fx.append(x)
                     fy.append(y)
@@ -396,52 +428,63 @@ with mp_hands.Hands(
                     finger_angle = hand_angle(finger_points) # 計算手指角度，回傳長度為 5 的串列
                     #print(finger_angle)                     # 印出角度 ( 有需要就開啟註解 )
                     text = hand_pos(finger_angle)            # 取得手勢所回傳的內容
-                    if text=="Good" or text=='YA!!!':
+                    if text=="Good" or text=='YA!!!' or  text=='666!':
                         Grade+=1
                     elif text=="FXXK!":
                         Grade-=1
                         w=size[1]
                         h=size[0]
-                        x_max = max(fx)              # 如果是比中指，取出 x 座標最大值
-                        y_max = max(fy)              # 如果是比中指，取出 y 座標最大值
-                        x_min = min(fx) - 10         # 如果是比中指，取出 x 座標最小值
-                        y_min = min(fy) - 10         # 如果是比中指，取出 y 座標最小值
+                        x_max = max(fx)              # 取出 x 座標最大值
+                        y_max = max(fy)              # 取出 y 座標最大值
+                        x_min = min(fx) - 10         # 取出 x 座標最小值
+                        y_min = min(fy) - 10         # 取出 y 座標最小值
                         mosaic(debug_image,x_max,x_min,y_max,y_min,w,h)
                         bad_guy+=1
                     elif text=='FXXK YOU!!!':
                         Grade-=2
                         w=size[1]
                         h=size[0]
-                        x_max = max(fx)              # 如果是比中指，取出 x 座標最大值
-                        y_max = max(fy)              # 如果是比中指，取出 y 座標最大值
-                        x_min = min(fx) - 10         # 如果是比中指，取出 x 座標最小值
-                        y_min = min(fy) - 10         # 如果是比中指，取出 y 座標最小值
+                        x_max = max(fx)              # 取出 x 座標最大值
+                        y_max = max(fy)              # 取出 y 座標最大值
+                        x_min = min(fx) - 10         # 取出 x 座標最小值
+                        y_min = min(fy) - 10         # 取出 y 座標最小值
                         mosaic(debug_image,x_max,x_min,y_max,y_min,w,h)
                         bad_guy+=2
                     if len(result_hand.multi_handedness)==2:
                         print("both")
                         cv.putText(debug_image, text, (30,120), fontFace, 1.5, (255,255,255), 5, lineType) # 印出文字
-                        cv.putText(debug_image, text, (800,120), fontFace, 1.5, (255,255,255), 5, lineType) # 印出文字'''
+                        cv.putText(debug_image, text, (1000,120), fontFace, 1.5, (255,255,255), 5, lineType) # 印出文字
                     else:
                         if lbl=="Left":
                             cv.putText(debug_image, text, (30,120), fontFace, 1.5, (255,255,255), 5, lineType) # 印出文字
                         if lbl=="Right":
-                            cv.putText(debug_image, text, (1000,120), fontFace, 1.5, (255,255,255), 5, lineType) # 印出文字'''
-        cv.putText(debug_image, 'Grade: '+str(Grade), (500,80), fontFace, 1.5, (255,255,255), 3, lineType) # 印出文字
+                            cv.putText(debug_image, text, (1000,120), fontFace, 1.5, (255,255,255), 5, lineType) # 印出文字
+       
+        if  int(time.time()-ftime)<=5:
+            cv.putText(debug_image,'You Bastard!!!', (450,40), fontFace, 1, (0,255,255), 3, lineType) # 印出文字 bgr
+        
+        cv.putText(debug_image, 'Emotional Score: '+str(Grade), (300,80), fontFace, 1.5, (255,255,0), 3, lineType) # 印出文字
         # Screen reflection
-        if Grade<=-100:
+        t1,starttime=timer(period,starttime)
+        print(t1, starttime)
+        if Grade<=-100 and t1:
             line_notify(name+'同事有負面傾向，'+name+'的主管可能要多關心他',token)
             line_notify('負面傾向',token)
             Grade=0
-        elif Grade>=100:
+        elif Grade>=100 and t1:
             line_notify(name+'同事正面積極，但是這樣是有點反常...',token)
             line_notify('正面積極',token)
             Grade=0
-        if bad_guy>=50:
+            period+=1
+        if bad_guy>=50 and t1:
             line_notify(name+'同事亂比不雅手勢，'+name+'的主管會讓他看不到明天上班太陽',token)
             line_notify('同事亂比不雅手勢',token)
             bad_guy=0
+            ftime=time.time()
+            #time.sleep(1)
+        out.write(debug_image)
         cv.imshow('Facial Emotion and Gesture Recognition', debug_image)
     
     cap.release()
+    out.release()   
     cv.destroyAllWindows()
