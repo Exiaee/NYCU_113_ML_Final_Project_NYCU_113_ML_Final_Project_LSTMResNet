@@ -514,7 +514,7 @@ with mp_hands.Hands(
                 if (pos_flag-neg_flag>5):
                     line_notify(name+'的情緒不穩定，但是還是正面積極一些',token)
                 elif (-5<pos_flag-neg_flag<5):
-                    line_notify(name+'的情緒不穩定，陰晴不定',token)
+                    line_notify(name+'的情緒不穩定',token)
                 else:
                     line_notify(name+'的情緒不穩定，且負面傾向嚴重',token)
             time.sleep(2)
