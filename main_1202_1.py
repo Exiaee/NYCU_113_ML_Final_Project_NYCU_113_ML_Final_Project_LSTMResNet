@@ -22,9 +22,6 @@ mp_drawing_styles = mp.solutions.drawing_styles
 mp_hands = mp.solutions.hands
 
 def line_notify(msg,_token):
-    #_token = 'qphN3Zi109GPsEJJHQpATvhcpSikaaOzSJh8HEZMFds'  # 填入你的token
-    # line chat box:zWokLlOU7VY5NNhRo1TKIBOpTm9glGwgoeTTjkqrrdx
-    #Ac3V4ej7sgqLZKRR6wL5GmN3yu1O3H14TzP5LKafcro
     __token = _token  # 填入你的token
     url = 'https://notify-api.line.me/api/notify'
     headers = {
@@ -101,14 +98,14 @@ def hand_pos(finger_angle):
     f3 = finger_angle[2]   # 中指角度
     f4 = finger_angle[3]   # 無名指角度
     f5 = finger_angle[4]   # 小拇指角度
-
+    print(f1,f2,f3,f4,f5)
     # 小於 50 表示手指伸直，大於等於 50 表示手指捲縮
     if f1<50 and f2>=50 and f3>=50 and f4>=50 and f5>=50:
         return 'Good'
-    elif f1>=50 and f2>=50 and f3<70 and f4>=50 and f5>=50:
+    elif f1>=50 and f2>=50 and f3<85 and f4>=50 and f5>=50:
         ###return 'FUCK!'
         return 'FXXK!'
-    elif f1<=50 and f2>=50 and f3<70 and f4>=50 and f5<=50:
+    elif f1<=50 and f2>=50 and f3<85 and f4>=50 and f5<=50:
         ### return 'FUCK YOU!!!'
         return 'FXXK YOU!!!'
     elif f1<50 and f2<50 and f3>=50 and f4>=50 and f5<50:
@@ -123,15 +120,15 @@ def hand_pos(finger_angle):
         return 'YA!!!'
     elif f1>=50 and f2>=50 and f3<50 and f4<50 and f5<50:
         return 'ok'
-    elif f1<50 and f2>=50 and f3<50 and f4<50 and f5<50:
+    elif f1<50 and f2>=50 and f3<70 and f4<50 and f5<50:
         return 'ok'
-    elif f1>=50 and f2<50 and f3<50 and f4<50 and f5>50:
+    elif f1>=50 and f2<50 and f3<70 and f4<50 and f5>50:
         return '3'
     elif f1>=50 and f2<50 and f3<50 and f4<50 and f5<50:
         return '4'
     elif f1<50 and f2<50 and f3<50 and f4<50 and f5<50:
         return 'NO! NO!'
-    elif f1<50 and f2>=50 and f3>=50 and f4>=50 and f5<50:
+    elif f1<50 and f2>=50 and f3>=85 and f4>=50 and f5<50:
         return '666!'
     elif f1<50 and f2<50 and f3>=50 and f4>=50 and f5>=50:
         return 'Bang'
@@ -355,6 +352,9 @@ mode = 0
 Grade = 0
 bad_guy = 0
 ftime = 0
+total_flag=0
+pos_flag=0
+neg_flag=0
 with mp_hands.Hands(
     model_complexity=0,
     min_detection_confidence=0.5,
@@ -362,10 +362,7 @@ with mp_hands.Hands(
 
     while True:
 
-        # Process Key (ESC: end)
-        key = cv.waitKey(10)
-        if key == 27 or 0xFF == ord('q'):  # ESC
-            break
+       
     
         # Camera capture
         ret, image = cap.read()
@@ -404,10 +401,11 @@ with mp_hands.Hands(
                         keypoint_classifier_labels[facial_emotion_id])
                 if keypoint_classifier_labels[facial_emotion_id]=="Happy":
                     Grade+=1
+                    total_flag+=1
                 elif keypoint_classifier_labels[facial_emotion_id]=="Sad" or keypoint_classifier_labels[facial_emotion_id]=="Angry":
                     Grade-=1
-
-                print(keypoint_classifier_labels[facial_emotion_id])
+                    total_flag-=1
+                #print(keypoint_classifier_labels[facial_emotion_id])
         result_hand = hands.process(image)
         #lbl = result_hand.multi_handedness[0].classification[0].label
        
@@ -430,8 +428,13 @@ with mp_hands.Hands(
                     text = hand_pos(finger_angle)            # 取得手勢所回傳的內容
                     if text=="Good" or text=='YA!!!' or  text=='666!':
                         Grade+=1
+                        total_flag+=1
                     elif text=="FXXK!":
                         Grade-=1
+                        total_flag-=1
+                        if len(result_hand.multi_handedness)==2:
+                            Grade-=1
+                            total_flag-=1
                         w=size[1]
                         h=size[0]
                         x_max = max(fx)              # 取出 x 座標最大值
@@ -442,6 +445,10 @@ with mp_hands.Hands(
                         bad_guy+=1
                     elif text=='FXXK YOU!!!':
                         Grade-=2
+                        total_flag-=2
+                        if len(result_hand.multi_handedness)==2:
+                            Grade-=2
+                            total_flag-=2
                         w=size[1]
                         h=size[0]
                         x_max = max(fx)              # 取出 x 座標最大值
@@ -452,38 +459,66 @@ with mp_hands.Hands(
                         bad_guy+=2
                     if len(result_hand.multi_handedness)==2:
                         print("both")
-                        cv.putText(debug_image, text, (30,120), fontFace, 1.5, (255,255,255), 5, lineType) # 印出文字
-                        cv.putText(debug_image, text, (1000,120), fontFace, 1.5, (255,255,255), 5, lineType) # 印出文字
+                        cv.putText(debug_image, text, (20,130), fontFace, 1.5, (255,255,255), 5, lineType) # 印出文字
+                        cv.putText(debug_image, text, (900,130), fontFace, 1.5, (255,255,255), 5, lineType) # 印出文字
                     else:
                         if lbl=="Left":
-                            cv.putText(debug_image, text, (30,120), fontFace, 1.5, (255,255,255), 5, lineType) # 印出文字
+                            cv.putText(debug_image, text, (30,130), fontFace, 1.5, (255,255,255), 5, lineType) # 印出文字
                         if lbl=="Right":
-                            cv.putText(debug_image, text, (1000,120), fontFace, 1.5, (255,255,255), 5, lineType) # 印出文字
+                            cv.putText(debug_image, text, (900,130), fontFace, 1.5, (255,255,255), 5, lineType) # 印出文字
        
         if  int(time.time()-ftime)<=5:
-            cv.putText(debug_image,'You Bastard!!!', (450,40), fontFace, 1, (0,255,255), 3, lineType) # 印出文字 bgr
+            cv.putText(debug_image,'You Bastard!!!', (550,40), fontFace, 1, (0,255,255), 3, lineType) # 印出文字 bgr
         
-        cv.putText(debug_image, 'Emotional Score: '+str(Grade), (300,80), fontFace, 1.5, (255,255,0), 3, lineType) # 印出文字
+        if total_flag>=200:
+            pos_flag+=1
+            total_flag-=200
+        elif total_flag<=-100:
+            neg_flag+=1
+            total_flag+=100
+        cv.putText(debug_image, "Positive Count: "+str(pos_flag), (20, 30),cv.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1,
+                   cv.LINE_AA)
+        cv.putText(debug_image, "Negative Count: "+str(neg_flag), (20, 50),cv.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1,
+                   cv.LINE_AA)
+        cv.putText(debug_image, 'Emotional Score: '+str(Grade), (400,80), fontFace, 1.5, (255,255,0), 3, lineType) # 印出文字
         # Screen reflection
         t1,starttime=timer(period,starttime)
-        print(t1, starttime)
-        if Grade<=-100 and t1:
+        #print(t1, starttime)
+        if Grade<=-200 and t1:
             line_notify(name+'同事有負面傾向，'+name+'的主管可能要多關心他',token)
-            line_notify('負面傾向',token)
+            #line_notify('負面傾向',token)
             Grade=0
-        elif Grade>=100 and t1:
+        elif Grade>=200 and t1:
             line_notify(name+'同事正面積極，但是這樣是有點反常...',token)
-            line_notify('正面積極',token)
+            #line_notify('正面積極',token)
             Grade=0
-            period+=1
+            #period+=1
         if bad_guy>=50 and t1:
             line_notify(name+'同事亂比不雅手勢，'+name+'的主管會讓他看不到明天上班太陽',token)
-            line_notify('同事亂比不雅手勢',token)
+            #line_notify('同事亂比不雅手勢',token)
             bad_guy=0
             ftime=time.time()
             #time.sleep(1)
         out.write(debug_image)
         cv.imshow('Facial Emotion and Gesture Recognition', debug_image)
+        # Process Key (ESC: end)
+        key = cv.waitKey(10)
+        if key == 27 or 0xFF == ord('q'):  # ESC
+            if pos_flag<2 and neg_flag<2:
+                line_notify(name+'的情緒穩定',token)
+            elif pos_flag>2 and neg_flag<2:
+                line_notify(name+'的情緒穩定且正面積極',token)
+            elif pos_flag<2 and neg_flag>2:
+                 line_notify(name+'的情緒持續負面傾向',token)
+            elif pos_flag>2 and neg_flag>2:
+                if (pos_flag-neg_flag>5):
+                    line_notify(name+'的情緒不穩定，但是還是正面積極一些',token)
+                elif (-5<pos_flag-neg_flag<5):
+                    line_notify(name+'的情緒不穩定，陰晴不定',token)
+                else:
+                    line_notify(name+'的情緒不穩定，且負面傾向嚴重',token)
+            time.sleep(2)
+            break
     
     cap.release()
     out.release()   
