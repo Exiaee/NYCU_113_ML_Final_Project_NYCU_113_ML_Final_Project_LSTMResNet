@@ -238,7 +238,7 @@ def draw_info_text(image, brect, facial_text):
 
 root=tk.Tk()
 
-root.geometry("520x240")
+root.geometry("600x240")
 root.title('NYCU ML 11thGroup Final Report')
 root.configure(bg="#7AFEC6")
 #root.geometry('300x300')
@@ -270,6 +270,8 @@ def Info():
         global name
         name=str(_name)
         period=int(entry_period)
+        if period<=0:
+            period=1
         print(name)
         root.destroy()
 def Q():
@@ -279,6 +281,40 @@ def JieShu():
     tkinter.messagebox.showwarning(title='Warning', message='You click the x button.')
     os._exit(0)
 
+
+
+
+'''def radiobutton_event(widget):
+    print('radiobutton_event: ' + val.get() + ' checked')
+    global Option
+    Option=''
+    if val.get()=='':
+        Option='Send Line Message Periodically'
+        #Option = widget['text']
+    Option=str(val.get())
+    print (Option)
+    
+def radiobutton_event_2(widget2):
+    print('radiobutton_event: ' + val2.get() + ' checked')
+    global mos
+    mos=''
+    print(mos)
+    mos = widget2['text']'''
+    
+Option=["Send Line Message Periodically"]
+mos=["Show Your Face"]
+
+
+def radiobutton_event(widget):
+    print('radiobutton_event: ' + val.get() + ' checked')
+    Option.append(widget['text'])
+    print (Option)
+    
+def radiobutton_event_2(widget2):
+    print('radiobutton_event: ' + val2.get() + ' checked')
+    mos.append(widget2['text'])
+    print(mos)
+   
 
 label=tk.Label(root,text='Account',bg='#DDA0DD',fg="#8B008B",
             font=("Algerian",12,"bold"),anchor='c')
@@ -304,12 +340,31 @@ label.grid(row=3)
 En3=tk.Entry(root,width=50)
 En3.grid(row=3,column=1)
 
+val = tk.StringVar()
+val2 = tk.StringVar() 
+radio_btn1 = tk.Radiobutton(root, text='Send Line Message Periodically',variable=val, value='Send Line Message Periodically',
+                            command=lambda: radiobutton_event(radio_btn1))
+radio_btn1.grid(row=4,column=0)
+radio_btn2 = tk.Radiobutton(root, text='Only Once After Quitting, Except Middle Finger',variable=val, value='Only Once After Quitting, Except Middle Finger',
+                            command=lambda: radiobutton_event(radio_btn2))
+radio_btn2.grid(row=4,column=1)
+#radio_btn1.select()
+#radio_btn2.deselect()
+val.set('Send Line Message Periodically')
+
+radio_btn3 = tk.Radiobutton(root, text='Show Your Face',variable=val2, value='Show Your Face',
+                            command=lambda: radiobutton_event_2(radio_btn3))
+radio_btn3.grid(row=5,column=0)
+radio_btn4 = tk.Radiobutton(root, text='Mosaic Your Face',variable=val2, value='Mosaic Your Face',
+                            command=lambda: radiobutton_event_2(radio_btn4))
+radio_btn4.grid(row=5,column=1)
+val2.set('Show Your Face')
 
 
 b=tk.Button(root,text='Exit',anchor='c',width=6,height=1,command=Q)#quit可以讓pyhon shell結束
-b.grid(row=4,column=0)
+b.grid(row=8,column=0)
 b1=tk.Button(root,text='Login',anchor='c',width=6,height=1,command=Info)
-b1.grid(row=4,column=1)
+b1.grid(row=8,column=1)
 root.protocol("WM_DELETE_WINDOW", JieShu)
 root.mainloop()
 
@@ -319,7 +374,7 @@ cap_width = 1920
 cap_height = 1080
 use_brect = True
 
-
+print (Option)
 # Camera preparation
 cap = cv.VideoCapture(cap_device)
 cap.set(cv.CAP_PROP_FRAME_WIDTH, cap_width)
@@ -383,7 +438,7 @@ with mp_hands.Hands(
             for face_landmarks in results.multi_face_landmarks:
                 # Bounding box calculation
                 brect = calc_bounding_rect(debug_image, face_landmarks)
-    
+                print(brect)
                 # Landmark calculation
                 landmark_list = calc_landmark_list(debug_image, face_landmarks)
     
@@ -399,6 +454,20 @@ with mp_hands.Hands(
                         debug_image,
                         brect,
                         keypoint_classifier_labels[facial_emotion_id])
+               
+                if mos[-1]=="Mosaic Your Face":
+                    face_location=list()
+                    face_location.clear()
+                    for temp in brect:
+                        face_location.append(int(temp))
+                    w=cap_width
+                    h=cap_height
+                    x_max = face_location[2]              # 取出 x 座標最大值
+                    y_max = face_location[3]              # 取出 y 座標最大值
+                    x_min = face_location[0]        # 取出 x 座標最小值
+                    y_min = face_location[1]         # 取出 y 座標最小值
+                    mosaic(debug_image,x_max,x_min,y_max,y_min,w,h)
+                
                 if keypoint_classifier_labels[facial_emotion_id]=="Happy":
                     Grade+=1
                     total_flag+=1
@@ -484,12 +553,17 @@ with mp_hands.Hands(
         # Screen reflection
         t1,starttime=timer(period,starttime)
         #print(t1, starttime)
+       
         if Grade<=-200 and t1:
-            line_notify(name+'同事有負面傾向，'+name+'的主管可能要多關心他',token)
+            print("nAUU")
+            print(Option[-1])
+            if Option[-1]=="Send Line Message Periodically":
+                line_notify(name+'同事有負面傾向，'+name+'的主管可能要多關心他',token)
             #line_notify('負面傾向',token)
             Grade=0
         elif Grade>=200 and t1:
-            line_notify(name+'同事正面積極，但是這樣是有點反常...',token)
+            if Option[-1]=="Send Line Message Periodically":
+                line_notify(name+'同事正面積極，但是這樣是有點反常...',token)
             #line_notify('正面積極',token)
             Grade=0
             #period+=1
