@@ -12,6 +12,7 @@ import numpy as np
 import mediapipe as mp
 from model import KeyPointClassifier
 import time
+from tkinter import filedialog
   
 # Timer starts
 starttime = time.time()
@@ -238,7 +239,7 @@ def draw_info_text(image, brect, facial_text):
 
 root=tk.Tk()
 
-root.geometry("600x240")
+root.geometry("800x240")
 root.title('NYCU ML 11thGroup Final Report')
 root.configure(bg="#7AFEC6")
 #root.geometry('300x300')
@@ -303,7 +304,8 @@ def radiobutton_event_2(widget2):
     
 Option=["Send Line Message Periodically"]
 mos=["Show Your Face"]
-
+videofile_option=["WebCam"]
+videofile_path=[]
 
 def radiobutton_event(widget):
     print('radiobutton_event: ' + val.get() + ' checked')
@@ -314,69 +316,109 @@ def radiobutton_event_2(widget2):
     print('radiobutton_event: ' + val2.get() + ' checked')
     mos.append(widget2['text'])
     print(mos)
-   
+
+def radiobutton_event_3(widget3):
+    print('radiobutton_event: ' + val_path.get() + ' checked')
+    videofile_option.append(widget3['text'])
+    print(videofile_option)    
+
+def show():
+    file_path = filedialog.askopenfilename()   # 選擇檔案後回傳檔案路徑與名稱
+    videofile_path.append((str(file_path)))
+    print(videofile_path[-1])
+    print(file_path)
+    (filepath, tempfilename) = os.path.split(file_path)
+    short_filepath=filepath[0:3]+"..."+tempfilename     
+    val_path.set(short_filepath)
 
 label=tk.Label(root,text='Account',bg='#DDA0DD',fg="#8B008B",
             font=("Algerian",12,"bold"),anchor='c')
-label.grid(row=0)
+label.grid(row=0,sticky=tk.W)
 En=tk.Entry(root,width=50,textvariable=temp_name)
-En.grid(row=0,column=1)
+En.grid(row=0,column=1,sticky=tk.W)
 label1=tk.Label(root,text='Password',bg='#DDA0DD',fg="#8B008B",
             font=("Algerian",12,"bold"),anchor='c')
-label1.grid(row=1)
+label1.grid(row=1,sticky=tk.W)
 #En1=tk.Entry(root,show='*')#隱藏密碼
 En1=tk.Entry(root,width=50)#隱藏密碼
-En1.grid(row=1,column=1)
+En1.grid(row=1,column=1,sticky=tk.W)
 
 label=tk.Label(root,text='Line Token',bg='#DDA0DD',fg="#8B008B",
             font=("Algerian",12,"bold"),anchor='c')
-label.grid(row=2)
+label.grid(row=2,sticky=tk.W)
 En2=tk.Entry(root,width=50)
-En2.grid(row=2,column=1)
+En2.grid(row=2,column=1,sticky=tk.W)
 
 label=tk.Label(root,text='Time Period (s)',bg='#DDA0DD',fg="#8B008B",
             font=("Algerian",12,"bold"),anchor='c')
-label.grid(row=3)
+label.grid(row=3,sticky=tk.W)
 En3=tk.Entry(root,width=50)
-En3.grid(row=3,column=1)
+En3.grid(row=3,column=1,sticky=tk.W)
 
 val = tk.StringVar()
-val2 = tk.StringVar() 
+val2 = tk.StringVar()
+val_path = tk.StringVar() 
 radio_btn1 = tk.Radiobutton(root, text='Send Line Message Periodically',variable=val, value='Send Line Message Periodically',
                             command=lambda: radiobutton_event(radio_btn1))
-radio_btn1.grid(row=4,column=0)
+radio_btn1.grid(row=4,column=0,sticky=tk.W)
 radio_btn2 = tk.Radiobutton(root, text='Only Once After Quitting, Except Middle Finger',variable=val, value='Only Once After Quitting, Except Middle Finger',
                             command=lambda: radiobutton_event(radio_btn2))
-radio_btn2.grid(row=4,column=1)
+radio_btn2.grid(row=4,column=1,sticky=tk.E)
 #radio_btn1.select()
 #radio_btn2.deselect()
 val.set('Send Line Message Periodically')
 
 radio_btn3 = tk.Radiobutton(root, text='Show Your Face',variable=val2, value='Show Your Face',
                             command=lambda: radiobutton_event_2(radio_btn3))
-radio_btn3.grid(row=5,column=0)
+radio_btn3.grid(row=5,column=0,sticky=tk.W)
 radio_btn4 = tk.Radiobutton(root, text='Mosaic Your Face',variable=val2, value='Mosaic Your Face',
                             command=lambda: radiobutton_event_2(radio_btn4))
 radio_btn4.grid(row=5,column=1)
 val2.set('Show Your Face')
 
+radio_btn5 = tk.Radiobutton(root, text='Open Video File', value='Open Video File',
+                            command=lambda: radiobutton_event_3(radio_btn5))
+radio_btn5.grid(row=6,column=0,sticky=tk.W)
+
+radio_btn6 = tk.Radiobutton(root, text='WebCam', value='WebCam',
+                            command=lambda: radiobutton_event_3(radio_btn6))
+radio_btn6.grid(row=6,column=1)
+val_path.set('                                ')
+
+
+btn = tk.Button(root,
+                text='開啟檔案',
+                font=('Arial',12,'bold'),
+                command=show
+              )
+btn.grid(row=6,column=0,sticky=tk.E)
+mylabel = tk.Label(root, text='file path:', font=('Arial',10))  # 放入標籤，使用 textvariable=text       
+mylabel.grid(row=7,column=0,sticky=tk.W)
+mylabel_path = tk.Label(root, textvariable=val_path, font=('Arial',10))  # 放入標籤，使用 textvariable=text       
+mylabel_path.grid(row=7,column=0,sticky=tk.E)
 
 b=tk.Button(root,text='Exit',anchor='c',width=6,height=1,command=Q)#quit可以讓pyhon shell結束
-b.grid(row=8,column=0)
+b.grid(row=10,column=0,sticky=tk.W)
 b1=tk.Button(root,text='Login',anchor='c',width=6,height=1,command=Info)
-b1.grid(row=8,column=1)
+b1.grid(row=10,column=1)
 root.protocol("WM_DELETE_WINDOW", JieShu)
 root.mainloop()
 
+cap_device=0
+if(videofile_option[-1]=='WebCam'):
+    cap_device=0
+else:
+    cap_device=videofile_path[-1]
 
-cap_device = 0
 cap_width = 1920
 cap_height = 1080
 use_brect = True
 
-print (Option)
 # Camera preparation
 cap = cv.VideoCapture(cap_device)
+if not cap.isOpened():
+    tkinter.messagebox.showwarning(title='Error', message='Cannot open file or WebCam.')
+    os._exit(0)
 cap.set(cv.CAP_PROP_FRAME_WIDTH, cap_width)
 cap.set(cv.CAP_PROP_FRAME_HEIGHT, cap_height)
 fourcc = cv.VideoWriter_fourcc(*'MP4V')
