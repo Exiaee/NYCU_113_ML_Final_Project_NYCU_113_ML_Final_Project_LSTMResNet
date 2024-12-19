@@ -13,7 +13,13 @@ import mediapipe as mp
 from model import KeyPointClassifier
 import time
 from tkinter import filedialog
-  
+import torch
+from LSTMResNet import LSTMResNet
+from Classification import classify_images
+
+import os
+
+
 # Timer starts
 starttime = time.time()
 lapnum = 1
@@ -408,6 +414,13 @@ root.protocol("WM_DELETE_WINDOW", JieShu)
 root.mainloop()
 
 cap_device=0
+model_path = "Epoch12lstm_resnet_weights.pth"
+model = LSTMResNet(num_classes=2, hidden_size=128, num_layers=1)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model.load_state_dict(torch.load(model_path, map_location=device))
+model.to(device)
+model.eval()
+
 if(videofile_option[-1]=='WebCam'):
     cap_device=0
 else:
@@ -497,6 +510,7 @@ with mp_hands.Hands(
                 facial_emotion_id,percent = keypoint_classifier(pre_processed_landmark_list)
                 # Drawing part
                 percent=round(percent, 3)
+                
                 
                 debug_image = draw_bounding_rect(use_brect, debug_image, brect)
                 debug_image = draw_info_text(
