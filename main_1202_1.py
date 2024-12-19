@@ -346,13 +346,14 @@ En1.grid(row=1,column=1,sticky=tk.W)
 label=tk.Label(root,text='Line Token',bg='#DDA0DD',fg="#8B008B",
             font=("Algerian",12,"bold"),anchor='c')
 label.grid(row=2,sticky=tk.W)
-En2=tk.Entry(root,width=50)
+En2=tk.Entry(root,show='*',width=50)
 En2.grid(row=2,column=1,sticky=tk.W)
 
 label=tk.Label(root,text='Time Period (s)',bg='#DDA0DD',fg="#8B008B",
             font=("Algerian",12,"bold"),anchor='c')
 label.grid(row=3,sticky=tk.W)
 En3=tk.Entry(root,width=50)
+
 En3.grid(row=3,column=1,sticky=tk.W)
 
 val = tk.StringVar()
@@ -383,6 +384,8 @@ radio_btn5.grid(row=6,column=0,sticky=tk.W)
 radio_btn6 = tk.Radiobutton(root, text='WebCam', value='WebCam',
                             command=lambda: radiobutton_event_3(radio_btn6))
 radio_btn6.grid(row=6,column=1)
+radio_btn5.deselect()
+radio_btn6.select()
 val_path.set('                                ')
 
 
@@ -452,6 +455,7 @@ ftime = 0
 total_flag=0
 pos_flag=0
 neg_flag=0
+play = 1
 with mp_hands.Hands(
     model_complexity=0,
     min_detection_confidence=0.5,
@@ -459,12 +463,13 @@ with mp_hands.Hands(
 
     while True:
 
-       
-    
         # Camera capture
+
         ret, image = cap.read()
+    
         if not ret:
             break
+    
         image = cv.flip(image, 1)  # Mirror display
         debug_image = copy.deepcopy(image)
     
@@ -489,13 +494,15 @@ with mp_hands.Hands(
                     landmark_list)
     
                 #emotion classification
-                facial_emotion_id = keypoint_classifier(pre_processed_landmark_list)
+                facial_emotion_id,percent = keypoint_classifier(pre_processed_landmark_list)
                 # Drawing part
+                percent=round(percent, 3)
+                
                 debug_image = draw_bounding_rect(use_brect, debug_image, brect)
                 debug_image = draw_info_text(
                         debug_image,
                         brect,
-                        keypoint_classifier_labels[facial_emotion_id])
+                        keypoint_classifier_labels[facial_emotion_id]+", "+str(percent))
                
                 if mos[-1]=="Mosaic Your Face":
                     face_location=list()
@@ -621,20 +628,21 @@ with mp_hands.Hands(
         key = cv.waitKey(10)
         if key == 27 or 0xFF == ord('q'):  # ESC
             if pos_flag<2 and neg_flag<2:
-                line_notify(name+'的情緒穩定',token)
+                line_notify('今天'+name+'的情緒穩定',token)
             elif pos_flag>2 and neg_flag<2:
-                line_notify(name+'的情緒穩定且正面積極',token)
+                line_notify('今天'+name+'的今天情緒穩定且正面積極',token)
             elif pos_flag<2 and neg_flag>2:
-                 line_notify(name+'的情緒持續負面傾向',token)
+                 line_notify('今天'+name+'的情緒持續負面傾向',token)
             elif pos_flag>2 and neg_flag>2:
                 if (pos_flag-neg_flag>5):
-                    line_notify(name+'的情緒不穩定，但是還是正面積極一些',token)
+                    line_notify('今天'+name+'的情緒不穩定，但是還是正面積極一些',token)
                 elif (-5<pos_flag-neg_flag<5):
-                    line_notify(name+'的情緒不穩定',token)
+                    line_notify('今天'+name+'的情緒不穩定',token)
                 else:
-                    line_notify(name+'的情緒不穩定，且負面傾向嚴重',token)
-            time.sleep(2)
+                    line_notify('今天'+name+'的情緒不穩定，且負面傾向嚴重',token)
+            time.sleep(3)
             break
+  
     
     cap.release()
     out.release()   

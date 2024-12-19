@@ -31,10 +31,10 @@ class KeyPointClassifier(object):
         output_details_tensor_index = self.output_details[0]['index']
 
         result = self.interpreter.get_tensor(output_details_tensor_index)
-        if np.max(result) >= 0.85:
+        if np.max(result) >= 0.80:
             result_index = np.argmax(np.squeeze(result))
             self.last_index =  result_index
-            return result_index
+            return result_index,np.max(result) 
         else:
-            return self.last_index
+            return self.last_index,np.max(result) 
     

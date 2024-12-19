@@ -3,6 +3,8 @@ import copy
 import itertools
 import cv2 as cv
 import mediapipe as mp
+import cvzone
+from cvzone.SelfiSegmentationModule import SelfiSegmentation
 
 emo=['Angry','Happy','Neutral','Sad','Surprise']
 def select_mode(key, mode):
@@ -14,6 +16,16 @@ def select_mode(key, mode):
     if key == 107:  # k  # record mode
         mode = 1
     return number, mode
+
+def select_blur_mode(key, mode1):
+    if key == 98:  # b, Change Image Background to White
+        mode1 =1
+    if key == 99:  # c, Chancel the blur function
+        mode1 =2
+    return mode1
+
+
+
 
 
 def calc_landmark_list(image, landmarks):
@@ -76,6 +88,8 @@ cap_height = 1080
 use_brect = True
 
 # Camera preparation
+
+segmentor = SelfiSegmentation()
 cap = cv.VideoCapture(cap_device)
 cap.set(cv.CAP_PROP_FRAME_WIDTH, cap_width)
 cap.set(cv.CAP_PROP_FRAME_HEIGHT, cap_height)
@@ -88,7 +102,7 @@ face_mesh = mp_face_mesh.FaceMesh(
         min_tracking_confidence=0.5) 
 
 mode = 0
-
+blur_mode=2
 flag=0
 
 while True:
@@ -98,14 +112,25 @@ while True:
     if key == 27:  # ESC
         break
     number, mode = select_mode(key, mode)
-
+    print(number)
+    blur_mode=select_blur_mode(key,blur_mode)
     # Camera capture 
     ret, image = cap.read()
     if not ret:
         break
     image = cv.flip(image, 1)  # Mirror display
     debug_image = copy.deepcopy(image)
-
+    if blur_mode==1:
+        img_out= segmentor.removeBG(debug_image, (255,255,255))
+        debug_image=copy.deepcopy(img_out)
+        cv.imshow('Facial Emotion Recognition', debug_image)
+    if blur_mode==2:    
+        cv.imshow('Facial Emotion Recognition', debug_image)
+    cv.putText(debug_image,'b: Change Image Background to White', (820, 90),
+         cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 1,
+         cv.LINE_AA)
+    cv.putText(debug_image,'c: Cancel', (820, 110),
+        cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 1,cv.LINE_AA)
     # Detection implementation 
     image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
 
@@ -113,8 +138,8 @@ while True:
     results = face_mesh.process(image)
     image.flags.writeable = True
     if flag==0:
-        cv.putText(debug_image,"K: " + 'Record keypoints mode', (10, 90),
-            cv.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1,
+        cv.putText(debug_image,"K: " + 'Record Keypoints Mode', (10, 90),
+            cv.FONT_HERSHEY_SIMPLEX, 0.6, (0,0,0), 1,
             cv.LINE_AA)
         if mode==1:
             flag+=1
@@ -132,20 +157,28 @@ while True:
             logging_csv(number, mode, pre_processed_landmark_list)
 
     if mode == 1 :
-        cv.putText(debug_image, "MODE: " + 'Record keypoints mode', (10, 90),
-                cv.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1,
+        cv.putText(debug_image, "MODE: " + 'Record Keypoints Mode', (10, 90),
+                cv.FONT_HERSHEY_SIMPLEX, 0.6, (0,0,0), 1,
                 cv.LINE_AA)
         for i in range (6):
             if i==5:
                 cv.putText(debug_image,  "ESC: Quit", (10, 110+int(i*20)),
-                    cv.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1,
+                    cv.FONT_HERSHEY_SIMPLEX, 0.6, (0,0,0), 1,
                     cv.LINE_AA)
             else:
                 cv.putText(debug_image, str(i)+": " + emo[i], (10, 110+int(i*20)),
-                           cv.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1,
+                           cv.FONT_HERSHEY_SIMPLEX, 0.6, (0,0,0), 1,
                     cv.LINE_AA)
-        
     cv.imshow('Facial Emotion Recognition', debug_image)
+    print(blur_mode)
+    cv.putText(debug_image,'b: Change Image Background to White', (800, 30),
+        cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 1,
+        cv.LINE_AA)
+    cv.putText(debug_image,'c: Change Image Background to Normal', (800, 50),
+       cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 1,cv.LINE_AA)
+   
+     
+   
 
 cap.release()
 cv.destroyAllWindows()
